@@ -1,0 +1,13 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+/backend/.backend-venv/
+/backend/train/models/
+/.model_cache/
+**/__pycache__/
