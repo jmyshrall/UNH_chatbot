@@ -7,10 +7,11 @@ CFG: Dict[str, Any] = {}
 POLICY_TERMS: Tuple[str, ...] = ()
 
 def load_retrieval_config() -> None:
+    """
+    Loads retrieval configuration from config/retrieval.yaml.
+    """
     global CFG, POLICY_TERMS
-    
-    cfg_path = Path(__file__).resolve().parent / "retrieval.yaml"
-    
+    cfg_path = Path(__file__).resolve().parent / "config" / "retrieval.yaml"
     if cfg_path.exists():
         with open(cfg_path, "r", encoding="utf-8") as f:
             CFG = yaml.safe_load(f) or {}
@@ -20,10 +21,8 @@ def load_retrieval_config() -> None:
     # set defaults for missing keys
     if "policy_terms" not in CFG:
         CFG["policy_terms"] = []
-    
     if "tier_boosts" not in CFG:
         CFG["tier_boosts"] = {1: 1.35, 2: 1.10, 3: 1.0, 4: 1.0}
-    
     if "intent" not in CFG:
         CFG["intent"] = {
             "course_keywords": [],
@@ -41,12 +40,24 @@ def load_retrieval_config() -> None:
         }
     
     if "tier4_gate" not in CFG:
-        CFG["tier4_gate"] = {
-            "use_embedding": True,
-            "min_title_sim": 0.42,
-            "min_alt_sim": 0.38
+        CFG["tier4_gate"] = {"use_embedding": True, "min_title_sim": 0.42, "min_alt_sim": 0.38}
+
+    # Map retrieval_sizes -> internal search/k defaults if provided in YAML (NEW)
+    if "retrieval_sizes" in CFG:
+        rs = CFG.get("retrieval_sizes", {}) or {}
+        CFG["search"] = {
+            "topn_base": int(rs.get("topn_default", 40)),
+            "topn_with_alias": int(rs.get("topn_with_alias", 80)),
         }
-    
+        CFG["k"] = int(rs.get("k", 5))
+    else:
+        if "search" not in CFG:
+            CFG["search"] = {"topn_base": 40, "topn_with_alias": 80}
+        else:
+            CFG["search"]["topn_base"] = CFG["search"].get("topn_base", 40)
+            CFG["search"]["topn_with_alias"] = CFG["search"].get("topn_with_alias", 80)
+        CFG["k"] = int(CFG.get("k", 5))
+
     POLICY_TERMS = tuple(CFG.get("policy_terms", []))
     print("Configuration loaded")
 
